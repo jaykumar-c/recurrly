@@ -1,7 +1,8 @@
 import images from "@/constants/image";
 import { colors } from "@/constants/theme";
 import { en } from "@/locales/en";
-import { useRouter } from "expo-router";
+import { useAuth } from "@clerk/expo";
+import { Redirect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { styled } from "nativewind";
 import React from "react";
@@ -20,6 +21,11 @@ const { height: screenHeight } = Dimensions.get("window");
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { isSignedIn } = useAuth();
+
+  if (isSignedIn) {
+    return <Redirect href="/(tabs)" />;
+  }
 
   return (
     <SafeAreaView
@@ -51,7 +57,7 @@ export default function OnboardingScreen() {
           </Text>
 
           <Pressable
-            onPress={() => router.push("/(auth)/signIn")}
+            onPress={() => router.push("/(auth)/signUp")}
             className="mt-8 w-full items-center justify-center rounded-full bg-white py-4 active:opacity-90"
             accessibilityRole="button"
             accessibilityLabel={en.onboarding.getStarted}

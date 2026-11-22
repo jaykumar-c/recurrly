@@ -48,7 +48,7 @@ export default function SettingsScreen() {
 
     if (result.success) {
       setShowSignOutModal(false);
-      router.replace("/(auth)/signIn");
+      router.replace("/onboarding");
     } else {
       setSignOutError(result.error || null);
     }
@@ -129,7 +129,7 @@ export default function SettingsScreen() {
           <View className="rounded-2xl border border-border bg-card p-4">
             <View className="flex-row items-center justify-between py-2">
               <View className="flex-row items-center gap-3">
-                <Ionicons name="shield-checkmark-outline" size={20} color="#081126" />
+                <Ionicons name="shield-checkmark-outline" size={20} color={colors.primary} />
                 <Text className="text-sm font-sans-medium text-primary">
                   {en.settings.authLabel}
                 </Text>

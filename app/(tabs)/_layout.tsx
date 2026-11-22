@@ -14,7 +14,7 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
 
   if (!isSignedIn) {
-    return <Redirect href="/(auth)/signIn" />;
+    return <Redirect href="/onboarding" />;
   }
   const TabIcon = ({ focused, icon }: TabIconProps) => {
     return (

@@ -11,7 +11,7 @@ export function getAuthErrorMessage(error: any): string {
     case "form_identifier_exists":
       return "An account with this email already exists. Please sign in instead.";
     case "form_password_length_too_short":
-      return "Password must be at least 8 characters long.";
+      return "Password must be at least 15 characters long.";
     case "form_password_pwned":
       return "This password is too common or compromised. Please choose a more secure password.";
     case "form_code_incorrect":

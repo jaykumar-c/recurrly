@@ -67,7 +67,7 @@ export default function RootLayout() {
           flex: 1,
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: "#fff9e3",
+          backgroundColor: "#F8FAFC",
           padding: 24,
         }}
       >

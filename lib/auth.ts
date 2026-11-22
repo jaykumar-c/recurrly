@@ -45,7 +45,7 @@ export function validateSignUp(
 
   if (!password) {
     errors.password = en.validation.passwordRequired;
-  } else if (password.length < 8) {
+  } else if (password.length < 15) {
     errors.password = en.validation.passwordTooShort;
   }
 
@@ -69,39 +69,64 @@ export async function executePasswordSignIn(
   setActive?: (params: { session: string }) => Promise<void>
 ): Promise<AuthOperationResult> {
   try {
-    const signInAttempt = await signIn.create({
-      identifier: email.trim(),
-      password,
-    });
+    if (typeof signIn?.create === "function") {
+      const signInAttempt = await signIn.create({
+        identifier: email.trim(),
+        password,
+      });
 
-    if (signInAttempt.status === "complete") {
-      if (setActive && signInAttempt.createdSessionId) {
-        await setActive({ session: signInAttempt.createdSessionId });
+      if (signInAttempt.status === "complete") {
+        if (setActive && signInAttempt.createdSessionId) {
+          await setActive({ session: signInAttempt.createdSessionId });
+        }
+        return { success: true, isComplete: true };
       }
-      return { success: true, isComplete: true };
-    }
 
-    if (signInAttempt.status === "needs_second_factor") {
-      const emailFactor = signInAttempt.supportedSecondFactors?.find(
-        (f: any) => f.strategy === "email_code"
-      );
-      if (emailFactor) {
-        await signIn.prepareSecondFactor({ strategy: "email_code" });
+      if (signInAttempt.status === "needs_second_factor") {
+        if (typeof signIn.prepareSecondFactor === "function") {
+          await signIn.prepareSecondFactor({ strategy: "email_code" });
+        }
+        return { success: true, needsVerification: true };
       }
-      return { success: true, needsVerification: true };
-    }
 
-    if (signInAttempt.status === "needs_first_factor") {
-      const emailFactor = signInAttempt.supportedFirstFactors?.find(
-        (f: any) => f.strategy === "email_code"
-      );
-      if (emailFactor) {
-        await signIn.prepareFirstFactor({
-          strategy: "email_code",
-          emailAddressId: emailFactor.emailAddressId,
-        });
+      if (signInAttempt.status === "needs_first_factor") {
+        const emailFactor = signInAttempt.supportedFirstFactors?.find(
+          (f: any) => f.strategy === "email_code"
+        );
+        if (emailFactor && typeof signIn.prepareFirstFactor === "function") {
+          await signIn.prepareFirstFactor({
+            strategy: "email_code",
+            emailAddressId: emailFactor.emailAddressId,
+          });
+        }
+        return { success: true, needsVerification: true };
       }
-      return { success: true, needsVerification: true };
+    } else if (typeof signIn?.password === "function") {
+      const res = await signIn.password({
+        emailAddress: email.trim(),
+        password,
+      });
+      if (res?.error) {
+        return { success: false, error: getAuthErrorMessage(res.error) };
+      }
+      if (signIn.status === "complete") {
+        if (typeof signIn.finalize === "function") {
+          await signIn.finalize();
+        }
+        return { success: true, isComplete: true };
+      }
+      if (
+        signIn.status === "needs_second_factor" ||
+        signIn.status === "needs_first_factor"
+      ) {
+        if (
+          signIn.verifications &&
+          typeof signIn.verifications.sendEmailCode === "function"
+        ) {
+          await signIn.verifications.sendEmailCode();
+        }
+        return { success: true, needsVerification: true };
+      }
     }
 
     return {
@@ -119,22 +144,50 @@ export async function executeSignInVerifyOtp(
   setActive?: (params: { session: string }) => Promise<void>
 ): Promise<AuthOperationResult> {
   try {
-    let result;
-    if (signIn.status === "needs_second_factor") {
+    let result: any;
+    let sessionId: string | null = null;
+    let isComplete = false;
+
+    if (
+      typeof signIn?.attemptSecondFactor === "function" &&
+      signIn.status === "needs_second_factor"
+    ) {
       result = await signIn.attemptSecondFactor({
         strategy: "email_code",
         code: code.trim(),
       });
-    } else {
+      if (result?.status === "complete") {
+        isComplete = true;
+        sessionId = result.createdSessionId;
+      }
+    } else if (typeof signIn?.attemptFirstFactor === "function") {
       result = await signIn.attemptFirstFactor({
         strategy: "email_code",
         code: code.trim(),
       });
+      if (result?.status === "complete") {
+        isComplete = true;
+        sessionId = result.createdSessionId;
+      }
+    } else if (
+      signIn?.verifications &&
+      typeof signIn.verifications.verifyEmailCode === "function"
+    ) {
+      const res = await signIn.verifications.verifyEmailCode({
+        code: code.trim(),
+      });
+      if (res?.error) {
+        return { success: false, error: getAuthErrorMessage(res.error) };
+      }
+      if (typeof signIn.finalize === "function") {
+        await signIn.finalize();
+      }
+      isComplete = true;
     }
 
-    if (result.status === "complete") {
-      if (setActive && result.createdSessionId) {
-        await setActive({ session: result.createdSessionId });
+    if (isComplete) {
+      if (setActive && sessionId) {
+        await setActive({ session: sessionId });
       }
       return { success: true, isComplete: true };
     }
@@ -152,18 +205,25 @@ export async function executeResendSignInOtp(
   signIn: any
 ): Promise<AuthOperationResult> {
   try {
-    if (signIn.status === "needs_second_factor") {
-      await signIn.prepareSecondFactor({ strategy: "email_code" });
-    } else if (signIn.status === "needs_first_factor") {
+    if (signIn?.status === "needs_second_factor") {
+      if (typeof signIn.prepareSecondFactor === "function") {
+        await signIn.prepareSecondFactor({ strategy: "email_code" });
+      }
+    } else if (signIn?.status === "needs_first_factor") {
       const emailFactor = signIn.supportedFirstFactors?.find(
         (f: any) => f.strategy === "email_code"
       );
-      if (emailFactor) {
+      if (emailFactor && typeof signIn.prepareFirstFactor === "function") {
         await signIn.prepareFirstFactor({
           strategy: "email_code",
           emailAddressId: emailFactor.emailAddressId,
         });
       }
+    } else if (
+      signIn?.verifications &&
+      typeof signIn.verifications.sendEmailCode === "function"
+    ) {
+      await signIn.verifications.sendEmailCode();
     }
     return { success: true };
   } catch (err) {
@@ -177,14 +237,34 @@ export async function executePasswordSignUp(
   password: string
 ): Promise<AuthOperationResult> {
   try {
-    await signUp.create({
-      emailAddress: email.trim(),
-      password,
-    });
+    if (typeof signUp?.create === "function") {
+      await signUp.create({
+        emailAddress: email.trim(),
+        password,
+      });
+    } else if (typeof signUp?.password === "function") {
+      const res = await signUp.password({
+        emailAddress: email.trim(),
+        password,
+      });
+      if (res?.error) {
+        return { success: false, error: getAuthErrorMessage(res.error) };
+      }
+    }
 
-    await signUp.prepareEmailAddressVerification({
-      strategy: "email_code",
-    });
+    if (typeof signUp?.prepareEmailAddressVerification === "function") {
+      await signUp.prepareEmailAddressVerification({
+        strategy: "email_code",
+      });
+    } else if (
+      signUp?.verifications &&
+      typeof signUp.verifications.sendEmailCode === "function"
+    ) {
+      const res = await signUp.verifications.sendEmailCode();
+      if (res?.error) {
+        return { success: false, error: getAuthErrorMessage(res.error) };
+      }
+    }
 
     return { success: true, needsVerification: true };
   } catch (err) {
@@ -198,13 +278,42 @@ export async function executeVerifyEmailCode(
   setActive?: (params: { session: string }) => Promise<void>
 ): Promise<AuthOperationResult> {
   try {
-    const completeSignUp = await signUp.attemptEmailAddressVerification({
-      code: code.trim(),
-    });
+    let sessionId: string | null = null;
+    let isComplete = false;
 
-    if (completeSignUp.status === "complete") {
-      if (setActive && completeSignUp.createdSessionId) {
-        await setActive({ session: completeSignUp.createdSessionId });
+    if (typeof signUp?.attemptEmailAddressVerification === "function") {
+      const attempt = await signUp.attemptEmailAddressVerification({
+        code: code.trim(),
+      });
+      if (attempt?.status === "complete") {
+        isComplete = true;
+        sessionId = attempt.createdSessionId;
+      }
+    } else if (
+      signUp?.verifications &&
+      typeof signUp.verifications.verifyEmailCode === "function"
+    ) {
+      const res = await signUp.verifications.verifyEmailCode({
+        code: code.trim(),
+      });
+      if (res?.error) {
+        return { success: false, error: getAuthErrorMessage(res.error) };
+      }
+      if (typeof signUp.finalize === "function") {
+        const finRes = await signUp.finalize();
+        if (finRes?.error) {
+          return { success: false, error: getAuthErrorMessage(finRes.error) };
+        }
+        isComplete = true;
+      } else if (signUp.status === "complete") {
+        isComplete = true;
+        sessionId = signUp.createdSessionId;
+      }
+    }
+
+    if (isComplete) {
+      if (setActive && sessionId) {
+        await setActive({ session: sessionId });
       }
       return { success: true, isComplete: true };
     }
@@ -222,9 +331,19 @@ export async function executeResendVerificationCode(
   signUp: any
 ): Promise<AuthOperationResult> {
   try {
-    await signUp.prepareEmailAddressVerification({
-      strategy: "email_code",
-    });
+    if (typeof signUp?.prepareEmailAddressVerification === "function") {
+      await signUp.prepareEmailAddressVerification({
+        strategy: "email_code",
+      });
+    } else if (
+      signUp?.verifications &&
+      typeof signUp.verifications.sendEmailCode === "function"
+    ) {
+      const res = await signUp.verifications.sendEmailCode();
+      if (res?.error) {
+        return { success: false, error: getAuthErrorMessage(res.error) };
+      }
+    }
     return { success: true };
   } catch (err) {
     return { success: false, error: getAuthErrorMessage(err) };

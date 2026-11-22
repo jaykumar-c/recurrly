@@ -17,7 +17,7 @@ export const en = {
     passwordLabel: "Password",
     passwordPlaceholderSignIn: "Enter your password",
     passwordPlaceholderSignUp: "Create a password",
-    passwordHelper: "Must be at least 8 characters long",
+    passwordHelper: "Must be at least 15 characters long",
     codeLabel: "Verification Code",
     codePlaceholder: "Enter 6-digit code",
     signInAction: "Sign in",
@@ -64,7 +64,7 @@ export const en = {
     emailRequired: "Email address is required",
     emailInvalid: "Please enter a valid email address",
     passwordRequired: "Password is required",
-    passwordTooShort: "Password must be at least 8 characters long",
+    passwordTooShort: "Password must be at least 15 characters long",
     codeRequired: "Please enter the verification code",
     authInitializing: "Authentication service is initializing. Please try again.",
     additionalVerificationRequired:

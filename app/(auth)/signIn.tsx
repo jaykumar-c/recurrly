@@ -10,7 +10,8 @@ import {
 } from "@/lib/auth";
 import { useWarmUpBrowser } from "@/lib/useWarmUpBrowser";
 import { en } from "@/locales/en";
-import { useAuth, useClerk, useSignIn, useSSO } from "@clerk/expo";
+import { useAuth, useClerk, useSSO } from "@clerk/expo";
+import { useSignIn } from "@clerk/expo/legacy";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -397,7 +398,7 @@ export default function SignInScreen() {
                     <ActivityIndicator size="small" color={colors.accent} />
                   ) : (
                     <>
-                      <AntDesign name="google" size={18} color="#081126" />
+                      <AntDesign name="google" size={18} color={colors.primary} />
                       <Text className="text-sm font-sans-bold text-primary">
                         {en.auth.googleAction}
                       </Text>
