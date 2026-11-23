@@ -3,9 +3,9 @@ import {
   formatStatusLabel,
   formatSubscriptionDateTime,
 } from "@/lib/utils";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import React from "react";
-import { Image, Pressable, Text, View } from "react-native";
+import { Image, Pressable, Text, TouchableOpacity, View } from "react-native";
 
 const SubscriptionCard = ({
   name,
@@ -22,24 +22,34 @@ const SubscriptionCard = ({
   paymentMethod,
   startDate,
   status,
+  onCancelPress,
+  isCancelling,
+  onManagePress,
+  onChangePlanPress,
 }: SubscriptionCardProps) => {
   return (
     <Pressable
       onPress={onPress}
-      className={clsx("sub-card", expanded ? "sub-card-expanded" : "bg-card")}
-      style={!expanded && color ? { backgroundColor: color } : undefined}
+      className={clsx("sub-card", !color && (expanded ? "bg-muted" : "bg-card"))}
+      style={color ? { backgroundColor: color } : undefined}
     >
       {/* subtitle */}
       <View className="sub-head">
         <View className="sub-main">
-          <Image source={icon} className="sub-icon" />
+          <View className="size-16 items-center justify-center rounded-xl bg-white/70">
+            <Image
+              source={icon}
+              className="size-11"
+              resizeMode="contain"
+            />
+          </View>
           <View className="sub-copy">
             <Text numberOfLines={1} className="sub-title">
               {name}
             </Text>
             <Text numberOfLines={1} ellipsizeMode="tail" className="sub-meta">
-              {category?.trim() ||
-                plan?.trim() ||
+              {plan?.trim() ||
+                category?.trim() ||
                 (renewalDate ? formatSubscriptionDateTime(renewalDate) : "")}
             </Text>
           </View>
@@ -53,73 +63,93 @@ const SubscriptionCard = ({
 
       {/* EXPANDED CARD DETAILS */}
       {expanded && (
-        <View className="sub-bdy">
+        <View className="sub-body">
           <View className="sub-details">
             <View className="sub-row">
               <View className="sub-row-copy">
-                <Text className="sub-label">Payment:</Text>
+                <Text className="sub-label">Payment info:</Text>
                 <Text
                   className="sub-value"
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
-                  {paymentMethod?.trim() ?? "Not provided"}
+                  {paymentMethod?.trim() ?? "*****8530"}
                 </Text>
               </View>
+              <TouchableOpacity
+                onPress={onManagePress}
+                className="rounded-full border border-primary/20 bg-white/70 px-4 py-1"
+                activeOpacity={0.7}
+              >
+                <Text className="text-xs font-sans-semibold text-primary">
+                  Manage
+                </Text>
+              </TouchableOpacity>
             </View>
+
             <View className="sub-row">
               <View className="sub-row-copy">
-                <Text className="sub-label">Category:</Text>
+                <Text className="sub-label">Plan details:</Text>
                 <Text
                   className="sub-value"
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
-                  {(category?.trim() || plan?.trim()) ?? "Not provided"}
+                  {plan?.trim() || category?.trim() || "Premium"}
                 </Text>
               </View>
-            </View>
-            <View className="sub-row">
-              <View className="sub-row-copy">
-                <Text className="sub-label">Started:</Text>
-                <Text
-                  className="sub-value"
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {startDate
-                    ? formatSubscriptionDateTime(startDate)
-                    : "Not provided"}
+              <TouchableOpacity
+                onPress={onChangePlanPress}
+                className="rounded-full border border-primary/20 bg-white/70 px-4 py-1"
+                activeOpacity={0.7}
+              >
+                <Text className="text-xs font-sans-semibold text-primary">
+                  Change
                 </Text>
-              </View>
+              </TouchableOpacity>
             </View>
-            <View className="sub-row">
-              <View className="sub-row-copy">
-                <Text className="sub-label">Renewal date:</Text>
-                <Text
-                  className="sub-value"
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {renewalDate
-                    ? formatSubscriptionDateTime(renewalDate)
-                    : "Not provided"}
-                </Text>
+
+            {renewalDate && (
+              <View className="sub-row">
+                <View className="sub-row-copy">
+                  <Text className="sub-label">Renewal date:</Text>
+                  <Text
+                    className="sub-value"
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {formatSubscriptionDateTime(renewalDate)}
+                  </Text>
+                </View>
               </View>
-            </View>
-            <View className="sub-row">
-              <View className="sub-row-copy">
-                <Text className="sub-label">Status:</Text>
-                <Text
-                  className="sub-value"
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {status ? formatStatusLabel(status) : "Not provided"}
-                </Text>
+            )}
+
+            {status && (
+              <View className="sub-row">
+                <View className="sub-row-copy">
+                  <Text className="sub-label">Status:</Text>
+                  <Text
+                    className="sub-value"
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {formatStatusLabel(status)}
+                  </Text>
+                </View>
               </View>
-            </View>
+            )}
           </View>
+
+          <TouchableOpacity
+            onPress={onCancelPress}
+            className={clsx("sub-cancel", isCancelling && "sub-cancel-disabled")}
+            activeOpacity={0.8}
+            disabled={isCancelling}
+          >
+            <Text className="sub-cancel-text">
+              {isCancelling ? "Cancelling..." : "Cancel Subscription"}
+            </Text>
+          </TouchableOpacity>
         </View>
       )}
     </Pressable>

@@ -29,10 +29,13 @@ declare global {
   }
 
   interface SubscriptionCardProps extends Omit<Subscription, "id"> {
+    id?: string;
     expanded: boolean;
     onPress: () => void;
     onCancelPress?: () => void;
     isCancelling?: boolean;
+    onManagePress?: () => void;
+    onChangePlanPress?: () => void;
   }
 
   interface UpcomingSubscription {
@@ -51,6 +54,32 @@ declare global {
 
   interface ListHeadingProps {
     title: string;
+    onViewAllPress?: () => void;
+  }
+
+  interface InsightWeeklyBar {
+    day: string;
+    value: number;
+    formattedValue?: string;
+    isHighlighted?: boolean;
+  }
+
+  interface MonthlyExpenseSummary {
+    amount: number;
+    month: string;
+    changePercentage: number;
+    currency?: string;
+  }
+
+  interface InsightHistoryItem {
+    id: string;
+    icon: ImageSourcePropType;
+    name: string;
+    date: string;
+    price: number;
+    currency?: string;
+    billing: string;
+    color?: string;
   }
 }
 
